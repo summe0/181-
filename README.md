@@ -15,7 +15,7 @@
 
 ## 自动运行时间
 
-工作流默认每天北京时间 06:35 运行。GitHub 的定时任务偶尔会有几分钟延迟；如需换时间，修改 `.github/workflows/daily-checkin.yml` 中的 cron 表达式。
+工作流默认每天北京时间 8：00运行。GitHub 的定时任务偶尔会有几分钟延迟；如需换时间，修改 `.github/workflows/daily-checkin.yml` 中的 cron 表达式。
 
 ## 本地运行
 
