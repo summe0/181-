@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+daily_check_result_*.png
+.env
