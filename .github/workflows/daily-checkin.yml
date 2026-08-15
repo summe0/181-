@@ -1,0 +1,39 @@
+name: Daily Check-in
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-checkin
+  cancel-in-progress: false
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CHECKIN_PASSWORD: ${{ secrets.CHECKIN_PASSWORD }}
+      BARK_URL: ${{ secrets.BARK_URL }}
+
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run daily check-in
+        run: python daily_checkin_22_units.py
