@@ -347,7 +347,7 @@ def main():
 
                 if index < len(CHECKINS) - 1:
                     print("等待 10 秒后处理下一家...")
-                    page.wait_for_timeout(10_000)
+                   page.wait_for_timeout(5_000)
         finally:
             browser.close()
 
