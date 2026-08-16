@@ -72,44 +72,22 @@ def save_screenshot(page, screenshot_path):
 
 
 def send_bark_notification(success_count, fail_count, failed_names):
-    """发送每日打卡汇总到 Bark。"""
+    """发送运行汇总到 Bark；未配置 BARK_URL 时仅跳过通知。"""
     if not BARK_URL:
         print("未配置 BARK_URL，跳过 Bark 推送。")
         return
 
-    title = "今日打卡结果"
-
-    message = (
-        f"今日共打卡 {len(CHECKINS)} 家\n"
-        f"✅ 成功：{success_count} 家\n"
-        f"❌ 失败：{fail_count} 家"
-    )
-
+    title = "每日打卡完成" if fail_count == 0 else "每日打卡有失败"
+    message = f"共 {len(CHECKINS)} 家，成功 {success_count}，失败 {fail_count}。"
     if failed_names:
-        message += "\n失败店家：\n"
-        message += "\n".join(
-            f"- {name}" for name in failed_names
-        )
-    else:
-        message += "\n🎉 所有店家均打卡成功"
+        message += " 失败单位：" + "、".join(failed_names)
 
     try:
-        endpoint = (
-            f"{BARK_URL.rstrip('/')}/"
-            f"{quote(title, safe='')}/"
-            f"{quote(message, safe='')}"
-        )
-
-        request = Request(
-            endpoint,
-            headers={"User-Agent": "daily-checkin"}
-        )
-
+        endpoint = f"{BARK_URL.rstrip('/')}/{quote(title)}/{quote(message)}"
+        request = Request(endpoint, headers={"User-Agent": "daily-checkin"})
         with urlopen(request, timeout=15) as response:
             response.read()
-
         print("Bark 推送已发送。")
-
     except Exception as exc:
         print(f"Bark 推送失败：{exc}")
 
@@ -347,7 +325,7 @@ def main():
 
                 if index < len(CHECKINS) - 1:
                     print("等待 10 秒后处理下一家...")
-                   page.wait_for_timeout(5_000)
+                    page.wait_for_timeout(10_000)
         finally:
             browser.close()
 
