@@ -72,7 +72,7 @@ def save_screenshot(page, screenshot_path):
 
 
 def send_bark_notification(success_count, fail_count, failed_names):
-    """发送每日打卡汇总到 Bark；推送失败不改变打卡统计结果。"""
+    """发送运行汇总到 Bark；未配置 BARK_URL 时仅跳过通知。"""
     if not BARK_URL:
         print("未配置 BARK_URL，跳过 Bark 推送。")
         return
@@ -91,11 +91,7 @@ def send_bark_notification(success_count, fail_count, failed_names):
         message += "\n🎉 所有店家均打卡成功"
 
     try:
-        endpoint = (
-            f"{BARK_URL.rstrip('/')}/"
-            f"{quote(title, safe='')}/"
-            f"{quote(message, safe='')}"
-        )
+        endpoint = f"{BARK_URL.rstrip('/')}/{quote(title)}/{quote(message)}"
         request = Request(endpoint, headers={"User-Agent": "daily-checkin"})
         with urlopen(request, timeout=15) as response:
             response.read()
@@ -115,24 +111,7 @@ def process_daily_check(page, url, username, screenshot_path):
     print("\n开始访问打卡页面...")
 
     try:
-        # GitHub 云端偶尔首次导航停留在 about:blank，重试一次并明确报错。
-        navigation_error = None
-        for attempt in range(2):
-            try:
-                page.goto(url, wait_until="commit", timeout=60_000)
-                page.wait_for_load_state("domcontentloaded", timeout=30_000)
-                if page.url.lower() != "about:blank":
-                    break
-                navigation_error = "页面仍停留在 about:blank"
-            except Exception as exc:
-                navigation_error = str(exc)
-            if attempt == 0:
-                page.wait_for_timeout(2_000)
-        else:
-            raise RuntimeError(f"无法打开打卡页面：{navigation_error}")
-
-        if page.url.lower() == "about:blank":
-            raise RuntimeError("无法打开打卡页面：当前地址仍为 about:blank")
+        page.goto(url, wait_until="domcontentloaded", timeout=60_000)
 
         # 登录页面可能稍晚渲染。该页面的账号框不一定是 type="text"，
         # 因此同时按 placeholder、密码框和普通输入框兼容查找。
@@ -299,7 +278,7 @@ def process_daily_check(page, url, username, screenshot_path):
             save_screenshot(page, screenshot_path)
             return True
 
-        print("⚠️ 已点击提交，但未确认成功，请查看截图。")
+        print("⚠️ 已点击提交，但未确认成功。")
         save_screenshot(page, screenshot_path)
         return False
 
