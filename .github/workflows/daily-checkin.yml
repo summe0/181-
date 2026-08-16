@@ -2,8 +2,12 @@ name: Daily Check-in
 
 on:
   schedule:
+    # 北京时间早上8点 = UTC时间0点
     - cron: "0 0 * * *"
-  workflow_dispatch:
+    # 备用触发时间，防止GitHub延迟
+    - cron: "5 0 * * *"    # 北京 8:05
+    - cron: "15 0 * * *"   # 北京 8:15
+  workflow_dispatch:  # 允许手动触发
 
 permissions:
   contents: read
@@ -15,13 +19,14 @@ concurrency:
 jobs:
   checkin:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30  # 22家单位，每家约30秒，总共约11分钟，留足余量
     env:
       CHECKIN_PASSWORD: ${{ secrets.CHECKIN_PASSWORD }}
       BARK_URL: ${{ secrets.BARK_URL }}
+      TZ: Asia/Shanghai  # 设置时区为北京时间
 
     steps:
-      - name: Get code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -37,3 +42,14 @@ jobs:
 
       - name: Run daily check-in
         run: python daily_checkin_22_units.py
+
+      - name: Upload debug info on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkin-debug-${{ github.run_id }}
+          path: |
+            *.log
+            *.png
+            *.txt
+          retention-days: 7
