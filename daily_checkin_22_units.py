@@ -72,18 +72,30 @@ def save_screenshot(page, screenshot_path):
 
 
 def send_bark_notification(success_count, fail_count, failed_names):
-    """发送运行汇总到 Bark；未配置 BARK_URL 时仅跳过通知。"""
+    """发送每日打卡汇总到 Bark；推送失败不改变打卡统计结果。"""
     if not BARK_URL:
         print("未配置 BARK_URL，跳过 Bark 推送。")
         return
 
-    title = "每日打卡完成" if fail_count == 0 else "每日打卡有失败"
-    message = f"共 {len(CHECKINS)} 家，成功 {success_count}，失败 {fail_count}。"
+    title = "今日打卡结果"
+    message = (
+        f"今日共打卡 {len(CHECKINS)} 家\n"
+        f"✅ 成功：{success_count} 家\n"
+        f"❌ 失败：{fail_count} 家"
+    )
     if failed_names:
-        message += " 失败单位：" + "、".join(failed_names)
+        message += "\n失败店家：\n" + "\n".join(
+            f"- {name}" for name in failed_names
+        )
+    else:
+        message += "\n🎉 所有店家均打卡成功"
 
     try:
-        endpoint = f"{BARK_URL.rstrip('/')}/{quote(title)}/{quote(message)}"
+        endpoint = (
+            f"{BARK_URL.rstrip('/')}/"
+            f"{quote(title, safe='')}/"
+            f"{quote(message, safe='')}"
+        )
         request = Request(endpoint, headers={"User-Agent": "daily-checkin"})
         with urlopen(request, timeout=15) as response:
             response.read()
@@ -103,7 +115,24 @@ def process_daily_check(page, url, username, screenshot_path):
     print("\n开始访问打卡页面...")
 
     try:
-        page.goto(url, wait_until="domcontentloaded", timeout=60_000)
+        # GitHub 云端偶尔首次导航停留在 about:blank，重试一次并明确报错。
+        navigation_error = None
+        for attempt in range(2):
+            try:
+                page.goto(url, wait_until="commit", timeout=60_000)
+                page.wait_for_load_state("domcontentloaded", timeout=30_000)
+                if page.url.lower() != "about:blank":
+                    break
+                navigation_error = "页面仍停留在 about:blank"
+            except Exception as exc:
+                navigation_error = str(exc)
+            if attempt == 0:
+                page.wait_for_timeout(2_000)
+        else:
+            raise RuntimeError(f"无法打开打卡页面：{navigation_error}")
+
+        if page.url.lower() == "about:blank":
+            raise RuntimeError("无法打开打卡页面：当前地址仍为 about:blank")
 
         # 登录页面可能稍晚渲染。该页面的账号框不一定是 type="text"，
         # 因此同时按 placeholder、密码框和普通输入框兼容查找。
