@@ -161,11 +161,13 @@ def process_daily_check(page, url, username, screenshot_path):
                         'input[type="password"]'
                     ) && text.includes('登录');
                     return (!hasLoginForm && (
-                        hash.includes('loginquestion') ||
-                        hash.includes('/question') ||
-                        text.includes('今日已打卡') ||
-                        text.includes('打卡成功')
-                    ));
+                    hash.includes('loginquestion') ||
+                    hash.includes('/question') ||
+                     text.includes('今日已打卡') ||
+                    text.includes('打卡成功') ||
+                    text.includes('该用户对此场所') ||
+                    text.includes('已经打卡')
+                ));
                 }""",
                 timeout=30_000,
             )
@@ -177,7 +179,15 @@ def process_daily_check(page, url, username, screenshot_path):
 
         print(f"当前地址: {page.url}")
 
-        if page_has_text(page, "今日已打卡", "打卡成功"):
+           if page_has_text(
+            page,
+            "今日已打卡",
+            "打卡成功",
+            "该用户对此场所，今日已打卡",
+            "该用户对此场所今日已打卡",
+            "已经打卡",
+            "今日已经完成",
+        ):
             print("✅ 该单位今日已完成打卡，跳过。")
             save_screenshot(page, screenshot_path)
             return True
@@ -196,7 +206,7 @@ def process_daily_check(page, url, username, screenshot_path):
         no_count = no_options.count()
         print(f"找到 {yes_count} 个“是”选项，{no_count} 个“否”选项")
 
-        if yes_count < 3 or no_count < 3:
+        if yes_count < 3 or no_count < 6:
             print(f"⚠️ 选项数量异常：是={yes_count}，否={no_count}")
             page_text = "\n".join(page.locator("body").all_inner_texts())
             print("页面文字预览:", page_text[:500])
@@ -259,6 +269,8 @@ def process_daily_check(page, url, username, screenshot_path):
                 "打卡时间",
                 "打卡详情",
                 "历史记录",
+                "该用户对此场所，今日已打卡",
+                "该用户对此场所今日已打卡",
             )
             route_changed = any(
                 keyword in current_url
