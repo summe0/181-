@@ -179,7 +179,7 @@ def process_daily_check(page, url, username, screenshot_path):
 
         print(f"当前地址: {page.url}")
 
-          if page_has_text(
+        if page_has_text(
             page,
             "今日已打卡",
             "打卡成功",
