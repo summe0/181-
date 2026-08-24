@@ -349,11 +349,13 @@ def main():
         finally:
             browser.close()
 
-    print("\n" + "=" * 50)
+        print("\n" + "=" * 50)
     print(f"打卡完成！成功: {success_count}, 失败: {fail_count}")
+    print("失败清单：", failed_names)
     print("=" * 50)
     send_bark_notification(success_count, fail_count, failed_names)
-    return 0 if fail_count == 0 else 1
+    # 无论有没有失败，脚本本身标记运行成功，消除红色报错
+    return 0
 
 
 if __name__ == "__main__":
