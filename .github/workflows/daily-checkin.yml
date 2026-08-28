@@ -2,8 +2,8 @@ name: Daily Check-in
 
 on:
   schedule:
-    # GitHub 使用 UTC；UTC 00:00 = 北京时间 08:00。
-    - cron: "0 0 * * *"
+    # GitHub 使用 UTC；UTC 00:32 = 北京时间 08:32。
+    - cron: "32 0 * * *"
   workflow_dispatch:
 
 permissions:
