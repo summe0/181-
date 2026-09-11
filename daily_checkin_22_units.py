@@ -23,7 +23,7 @@ from playwright.sync_api import sync_playwright
 
 # 密码和 Bark 地址只从环境变量读取；上传 GitHub 前不会把敏感信息写入代码。
 PASSWORD = os.getenv("CHECKIN_PASSWORD", "").strip()
-BARK_URL = os.getenv("BARK_URL", "").strip()
+WECHAT_WEBHOOK = os.getenv("WECHAT_WEBHOOK", "").strip()
 
 CHECK_URLS = [
     (
@@ -71,18 +71,21 @@ def save_screenshot(page, screenshot_path):
     return
 
 
-def send_bark_notification(success_count, fail_count, failed_names):
-    """发送运行汇总到 Bark；未配置 BARK_URL 时仅跳过通知。"""
-    if not BARK_URL:
-        print("未配置 BARK_URL，跳过 Bark 推送。")
+def send_wechat_notification(success_count, fail_count, failed_names):
+    """发送运行汇总到企业微信群机器人。"""
+    if not WECHAT_WEBHOOK:
+        print("未配置 WECHAT_WEBHOOK，跳过企业微信推送。")
         return
 
-    title = "今日打卡结果"
+    title = "高桥今日打卡结果"
+
     message = (
+        f"{title}\n"
         f"今日共打卡 {len(CHECKINS)} 家\n"
         f"✅ 成功：{success_count} 家\n"
         f"❌ 失败：{fail_count} 家"
     )
+
     if failed_names:
         message += "\n失败店家：\n" + "\n".join(
             f"- {name}" for name in failed_names
@@ -90,14 +93,35 @@ def send_bark_notification(success_count, fail_count, failed_names):
     else:
         message += "\n🎉 所有店家均打卡成功"
 
+    payload = {
+        "msgtype": "text",
+        "text": {
+            "content": message
+        }
+    }
+
     try:
-        endpoint = f"{BARK_URL.rstrip('/')}/{quote(title)}/{quote(message)}"
-        request = Request(endpoint, headers={"User-Agent": "daily-checkin"})
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        request = Request(
+            WECHAT_WEBHOOK,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "daily-checkin",
+            },
+            method="POST",
+        )
+
         with urlopen(request, timeout=15) as response:
-            response.read()
-        print("Bark 推送已发送。")
+            result = response.read().decode("utf-8")
+
+        if '"errcode":0' in result:
+            print("企业微信推送已发送。")
+        else:
+            print(f"企业微信推送返回异常：{result}")
+
     except Exception as exc:
-        print(f"Bark 推送失败：{exc}")
+        print(f"企业微信推送失败：{exc}")
 
 
 def page_has_text(page, *texts):
@@ -344,16 +368,16 @@ def main():
                     failed_names.append(checkin["name"])
 
                 if index < len(CHECKINS) - 1:
-                    print("等待 10 秒后处理下一家...")
-                    page.wait_for_timeout(10_000)
-        finally:
-            browser.close()
+                print("等待 5 秒后处理下一家...")
+                page.wait_for_timeout(5_000)
+                finally:
+                browser.close()
 
         print("\n" + "=" * 50)
     print(f"打卡完成！成功: {success_count}, 失败: {fail_count}")
     print("失败清单：", failed_names)
     print("=" * 50)
-    send_bark_notification(success_count, fail_count, failed_names)
+    send_wechat_notification(success_count, fail_count, failed_names)
     # 无论有没有失败，脚本本身标记运行成功，消除红色报错
     return 0
 
