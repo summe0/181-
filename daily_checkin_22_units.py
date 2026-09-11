@@ -368,8 +368,8 @@ def main():
                     failed_names.append(checkin["name"])
 
                 if index < len(CHECKINS) - 1:
-                print("等待 5 秒后处理下一家...")
-                page.wait_for_timeout(5_000)
+                    print("等待 5 秒后处理下一家...")
+                    page.wait_for_timeout(5_000)
                 finally:
                 browser.close()
 
