@@ -51,7 +51,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          python -u daily_checkin.py 2>&1 | tee checkin.log
+          python -u daily_checkin_22_units.py 2>&1 | tee checkin.log
 
       - name: Check result
         shell: bash
