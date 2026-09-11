@@ -350,7 +350,7 @@ def main():
         page = context.new_page()
         page.set_default_timeout(15_000)
 
-                try:
+        try:
             for index, checkin in enumerate(CHECKINS):
                 print("\n" + "=" * 50)
                 print(f"处理第 {index + 1}/{len(CHECKINS)} 家：{checkin['name']}")
@@ -372,7 +372,7 @@ def main():
                     print("等待 5 秒后处理下一家...")
                     page.wait_for_timeout(5_000)
 
-     finally:
+        finally:
             browser.close()
 
         print("\n" + "=" * 50)
