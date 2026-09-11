@@ -2,7 +2,6 @@ name: Daily Check-in
 
 on:
   workflow_dispatch:
-
   # GitHub 使用 UTC；UTC 00:15 = 北京时间 08:15
   # schedule:
   #   - cron: "15 0 * * *"
@@ -31,7 +30,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -49,10 +48,10 @@ jobs:
 
       - name: Run daily check-in
         shell: bash
+        continue-on-error: true
         run: |
           set -o pipefail
           python -u daily_checkin.py 2>&1 | tee checkin.log
-        continue-on-error: true
 
       - name: Check result
         shell: bash
