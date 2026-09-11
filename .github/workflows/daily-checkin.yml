@@ -1,10 +1,11 @@
 name: Daily Check-in
 
 on:
-  # schedule:
-    # GitHub 使用 UTC；UTC 00:15 = 北京时间 08:15。
-    #- cron: "15 0 * * *"
   workflow_dispatch:
+
+  # GitHub 使用 UTC；UTC 00:15 = 北京时间 08:15
+  # schedule:
+  #   - cron: "15 0 * * *"
 
 permissions:
   contents: read
@@ -17,9 +18,10 @@ jobs:
   checkin:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
     env:
       CHECKIN_PASSWORD: ${{ secrets.CHECKIN_PASSWORD }}
-      BARK_URL: ${{ secrets.BARK_URL }}
+      WECHAT_WEBHOOK: ${{ secrets.WECHAT_WEBHOOK }}
       PYTHONUNBUFFERED: "1"
 
     steps:
@@ -49,7 +51,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -u daily_checkin_22_units.py 2>&1 | tee checkin.log
+          python -u daily_checkin.py 2>&1 | tee checkin.log
         continue-on-error: true
 
       - name: Check result
@@ -57,7 +59,7 @@ jobs:
         run: |
           cat checkin.log
           echo "Checkin finished, ignore result"
-           exit 0
+          exit 0
 
       - name: Upload logs
         if: always()
