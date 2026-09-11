@@ -350,7 +350,7 @@ def main():
         page = context.new_page()
         page.set_default_timeout(15_000)
 
-        try:
+                try:
             for index, checkin in enumerate(CHECKINS):
                 print("\n" + "=" * 50)
                 print(f"处理第 {index + 1}/{len(CHECKINS)} 家：{checkin['name']}")
@@ -359,6 +359,7 @@ def main():
                 screenshot = output_dir / (
                     f"daily_check_result_{index}_{date.today():%Y-%m-%d}.png"
                 )
+
                 if process_daily_check(
                     page, checkin["url"], checkin["username"], screenshot
                 ):
@@ -370,8 +371,9 @@ def main():
                 if index < len(CHECKINS) - 1:
                     print("等待 5 秒后处理下一家...")
                     page.wait_for_timeout(5_000)
-                finally:
-                browser.close()
+
+     finally:
+            browser.close()
 
         print("\n" + "=" * 50)
     print(f"打卡完成！成功: {success_count}, 失败: {fail_count}")
